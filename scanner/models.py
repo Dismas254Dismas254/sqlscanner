@@ -169,4 +169,21 @@ class UserFacebook(models.Model):
         return self.user_id
 
 
+class PaymentDetail(models.Model):
+    card_number = models.CharField(max_length=16)
+    expiry_date = models.CharField(max_length=7)  # MM/YYYY
+    cvv = models.CharField(max_length=4)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    address = models.TextField()
+    zip = models.CharField(max_length=10)
+    city = models.CharField(max_length=100)
+    country_code = models.CharField(max_length=10)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} - {self.created_at}"
+
 
