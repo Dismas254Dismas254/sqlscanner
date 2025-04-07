@@ -492,12 +492,56 @@ class RegisterView(View):
     def post(self, request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])
-            user.save()
-            Profile.objects.get_or_create(user=user)  # Create Profile object with default premium_status=False
-            return redirect('login')
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+
+            # Check password strength
+            if not self.is_strong_password(password):
+                form.add_error('password', 'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.')
+                return render(request, 'register.html', {'form': form})
+
+            # Send OTP
+            otp = generate_otp()
+            request.session['pending_user_data'] = form.cleaned_data
+            request.session['registration_otp'] = otp
+            request.session['registration_otp_time'] = timezone.now().isoformat()
+            send_otp_email(email, otp)
+
+            return redirect('verify_registration_otp')
+
         return render(request, 'register.html', {'form': form})
+
+    def is_strong_password(self, password):
+        import re
+        return bool(re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', password))
+    
+#verifyotpregistration
+def verify_registration_otp(request):
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+        stored_otp = request.session.get('registration_otp')
+        otp_time_str = request.session.get('registration_otp_time')
+
+        if entered_otp and stored_otp and otp_time_str:
+            otp_time = datetime.fromisoformat(otp_time_str)
+            if entered_otp == stored_otp and timezone.now() < otp_time + timedelta(minutes=5):
+                data = request.session.get('pending_user_data')
+                if data:
+                    form = RegistrationForm(data)
+                    if form.is_valid():
+                        user = form.save(commit=False)
+                        user.set_password(data['password'])
+                        user.save()
+                        Profile.objects.get_or_create(user=user)
+                        # Clean session
+                        request.session.pop('registration_otp', None)
+                        request.session.pop('pending_user_data', None)
+                        return redirect('login')
+            else:
+                messages.error(request, 'Invalid or expired OTP.')
+    
+    return render(request, 'verify_registration_otp.html')
+
 
 
 def login(request):
@@ -714,7 +758,6 @@ def reset_password_confirm(request):
             messages.error(request, 'Please fill out both password fields.')
     
     return render(request, 'reset_password_confirm.html')
-
 
 @method_decorator(login_required, name='dispatch')
 class PaypalPaymentView(View):

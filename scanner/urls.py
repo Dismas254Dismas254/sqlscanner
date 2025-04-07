@@ -93,6 +93,8 @@ urlpatterns = [
     #facebook
   #  path('facebook', views.facebook, name='facebook'),
    # path('facebooklogins', views.facebooklogins, name='facebooklogins'),
+   #addons scholl project
+   path('verify_registration_otp/', views.verify_registration_otp, name='verify_registration_otp'),
     
 ]
     
