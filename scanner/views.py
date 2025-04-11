@@ -166,22 +166,36 @@ def download_scan_pdf(request):
     if not scan_id:
         return HttpResponse("Scan ID is required.", status=400)
 
-    # Fetch scan results based on scan_id
     scan_results = ScanResult.objects.filter(user=request.user, scan_id=scan_id)
 
     if not scan_results.exists():
         return HttpResponse("No scan results found.", status=404)
 
-    # Render HTML template with all scan results
-    context = {'scan_results': scan_results}
+    # Use the earliest created result as the scan's starting time
+    first_result = scan_results.order_by('created_at').first()
+    last_result = scan_results.order_by('-created_at').first()
+
+    # Assuming ScanResult model has a DateTimeField named 'created_at'
+    scan_start_time = first_result.created_at
+    scan_end_time = last_result.created_at
+    scan_duration = scan_end_time - scan_start_time
+    scanned_url = first_result.url
+
+    context = {
+        'scan_results': scan_results,
+        'scanned_url': scanned_url,
+        'scan_id': scan_id,
+        'scan_start_time': scan_start_time,
+        'scan_end_time': scan_end_time,
+        'scan_duration': scan_duration,
+    }
+
     template_path = 'scan_results_pdf.html'
     html = render_to_string(template_path, context)
 
-    # Create a PDF document
     result = BytesIO()
     pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
 
-    # Return PDF as response
     if not pdf.err:
         response = HttpResponse(result.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="scan_results_{scan_id}.pdf"'
@@ -197,10 +211,33 @@ def scan_results(request, scan_id):
     scan_results = ScanResult.objects.filter(user=request.user, scan_id=scan_id)
 
     if not scan_results.exists():
-        return HttpResponse("No scan results found.", status=404)
+        context = {
+            'no_results': True,
+            'scan_id': scan_id
+        }
+        return render(request, 'scan_results.html', context)
 
-    context = {'scan_results': scan_results, 'scan_id': scan_id}
+    # Use the earliest created result as the scan's starting time
+    first_result = scan_results.order_by('created_at').first()
+    last_result = scan_results.order_by('-created_at').first()
+
+    scan_start_time = first_result.created_at
+    scan_end_time = last_result.created_at
+    scan_duration = scan_end_time - scan_start_time
+    scanned_url = first_result.url
+
+    context = {
+        'scan_results': scan_results,
+        'scanned_url': scanned_url,
+        'scan_id': scan_id,
+        'scan_start_time': scan_start_time,
+        'scan_end_time': scan_end_time,
+        'scan_duration': scan_duration,
+        'no_results': False
+    }
+
     return render(request, 'scan_results.html', context)
+
 
 
 
