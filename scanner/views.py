@@ -623,7 +623,7 @@ def login(request):
                 existing_user = User.objects.get(username=username)
                 if existing_user.check_password(password) and not existing_user.is_active:
                     return render(request, 'login.html', {
-                        'error': 'Your account is pending confirmation. Please check your email.',
+                        'error': 'Your account is pending activation.Please wait..',
                         'username': username,
                     })
             except User.DoesNotExist:
