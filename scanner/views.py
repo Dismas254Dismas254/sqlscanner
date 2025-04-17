@@ -1424,5 +1424,26 @@ def submit_payment(request):
 
 def test(request):
     return render(request,'dominica.html')
+
+@method_decorator(login_required, name='dispatch')
+class CardPaymentView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'card.html')  # Your form page
+
+    def post(self, request, *args, **kwargs):
+        # Simulating payment success (you would replace this with actual payment integration)
+        try:
+            # Simulate the process of upgrading the user to premium status
+            profile, created = Profile.objects.get_or_create(user=request.user)
+            profile.premium_status = True  # Set user as premium
+            profile.save()
+
+            # Show success message
+            messages.success(request, "✅ Payment simulated successfully! You are now a premium user.")
+            return redirect('dashboard')  # Redirect to the dashboard (or wherever you want the user to go)
+
+        except Exception as e:
+            # In case something goes wrong, render a failure page with the error message
+            return render(request, 'payment_failed.html', {'message': f"Something went wrong: {str(e)}"})
     
 
