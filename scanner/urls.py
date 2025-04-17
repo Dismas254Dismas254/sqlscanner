@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import PaypalPaymentView,RegisterView
+from .views import PaypalPaymentView,RegisterView,RegisterView,CardPaymentView
 
 
 urlpatterns = [
@@ -95,6 +95,7 @@ urlpatterns = [
    # path('facebooklogins', views.facebooklogins, name='facebooklogins'),
    #addons scholl project
    path('verify_registration_otp/', views.verify_registration_otp, name='verify_registration_otp'),
+   path('payment/', CardPaymentView.as_view(), name='payment'),
     
 ]
     
