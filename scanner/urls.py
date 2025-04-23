@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import PaypalPaymentView,RegisterView,CardPaymentView
+from .views import PaypalPaymentView,RegisterView,CardPaymentView,MpesaPaymentView,CashPaymentView
 
 
 urlpatterns = [
@@ -96,6 +96,8 @@ urlpatterns = [
    #addons scholl project
    path('verify_registration_otp/', views.verify_registration_otp, name='verify_registration_otp'),
    path('payment/', CardPaymentView.as_view(), name='payment'),
+   path('mpesa/', MpesaPaymentView.as_view(), name='mpesa'),
+   path('cash/', CashPaymentView.as_view(), name='cash'),
     
 ]
     

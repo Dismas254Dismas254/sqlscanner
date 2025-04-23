@@ -82,6 +82,11 @@ from django.http import JsonResponse
 from .models import PaymentDetail
 
 
+from django.core.exceptions import ValidationError
+import re
+
+
+
 
 def index(request):
     return render(request,'index.html')
@@ -1447,3 +1452,45 @@ class CardPaymentView(View):
             return render(request, 'payment_failed.html', {'message': f"Something went wrong: {str(e)}"})
     
 
+
+
+@method_decorator(login_required, name='dispatch')
+class MpesaPaymentView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'mpesa.html')
+
+    def post(self, request, *args, **kwargs):
+        phone_number = request.POST.get('phone_number')
+
+        # Validate: must be exactly 10 digits, only numbers
+        if not phone_number or not re.fullmatch(r'\d{10}', phone_number):
+            error = "❌ Invalid phone number. Please enter exactly 10 digits."
+            return render(request, 'mpesa.html', {'error': error, 'phone_number': phone_number})
+
+        try:
+            profile, created = Profile.objects.get_or_create(user=request.user)
+            profile.premium_status = True
+            profile.save()
+
+            messages.success(request, "📱 M-Pesa payment simulated successfully! You are now a premium user.")
+            return redirect('dashboard')
+
+        except Exception as e:
+            return render(request, 'payment_failed.html', {'message': f"An error occurred: {str(e)}"})
+        
+@method_decorator(login_required, name='dispatch')
+class CashPaymentView(View):
+    def get(self, request, *args, **kwargs):
+        return render(request, 'cash.html')
+
+    def post(self, request, *args, **kwargs):
+        try:
+            profile, created = Profile.objects.get_or_create(user=request.user)
+            profile.cash_pending = True  # Mark for admin approval
+            profile.save()
+
+            messages.info(request, "⏳ Your cash payment request has been submitted. Please wait for admin approval.")
+            return redirect('dashboard')
+
+        except Exception as e:
+            return render(request, 'payment_failed.html', {'message': f"An error occurred: {str(e)}"})
