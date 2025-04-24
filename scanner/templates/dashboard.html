@@ -153,7 +153,7 @@
             <section class="payment-status">
                 <h2 class="card-title">Membership Status</h2>
                 {% if user.profile.premium_status %}
-                    <p>Your account has a <strong>Premium</strong> membership. Unlock advanced scanning capabilities and real-time vulnerability reports to protect your assets effectively.</p>
+                    <p>Your account has a <strong>Premium</strong> membership. Unlocked advanced scanning capabilities and real-time vulnerability reports to protect your assets effectively.</p>
                     <a href="{% url 'scan' %}" class="btn btn-primary">Start a Scan</a>
                 {% else %}
                     <p>Your account is currently <strong>Free</strong>. Upgrade to premium for comprehensive vulnerability scanning and enhanced security features.</p>
