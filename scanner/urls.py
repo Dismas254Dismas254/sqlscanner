@@ -105,7 +105,8 @@ urlpatterns = [
     path('help/', views.help, name='help'),
     path('feedback/', views.feedback, name='feedback'),
     path('finance/reports/', views.finance_reports, name='finance_reports'),
-     path('finance/reports/download/', views.generate_report_pdf, name='download_finance_report'),
+    path('finance/reports/download/', views.generate_report_pdf, name='download_finance_report'),
+    
     
 ]
     
