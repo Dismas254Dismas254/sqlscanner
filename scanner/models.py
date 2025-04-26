@@ -22,10 +22,25 @@ class ScanResult(models.Model):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     premium_status = models.BooleanField(default=False)
-    cash_pending = models.BooleanField(default=False)  # New field for cash approval
+    cash_pending = models.BooleanField(default=False)
+    mpesa_pending = models.BooleanField(default=False)
+    mpesa_code = models.CharField(max_length=100, blank=True, null=True)  # Add this line
 
     def __str__(self):
-        return self.user.username
+        return f"{self.user.username} Profile"
+    
+
+class Feedback(models.Model):
+    # Field to store the user's feedback
+    text = models.TextField()
+
+    # Automatically set the timestamp when feedback is created
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        # Return a short preview of the feedback (first 50 characters)
+        return self.text[:50]
+
 
 
 

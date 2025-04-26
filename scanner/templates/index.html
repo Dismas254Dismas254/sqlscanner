@@ -128,15 +128,37 @@
             color: #0056b3;
         }
 
+        /* Improved Button Styles */
         .btn-primary {
             background-color: #007bff;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 30px;
             font-size: 18px;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
         }
 
         .btn-primary:hover {
             background-color: #0056b3;
+        }
+
+        .btn-info {
+            background-color: #17a2b8;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            display: inline-block;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-info:hover {
+            background-color: #117a8b;
+        }
+
+        .text-center a {
+            margin: 10px;
         }
     </style>
 </head>
@@ -153,12 +175,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a   style="color: #fff; font-size: large;"   class="nav-link" href="{% url 'register' %}">Register</a>
+                        <a style="color: #fff; font-size: large;" class="nav-link" href="{% url 'register' %}">Register</a>
                     </li>
                     <li class="nav-item">
-                        <a  style="color: #fff; font-size: large;"  class="nav-link" href="{% url 'login' %}">Login</a>
+                        <a style="color: #fff; font-size: large;" class="nav-link" href="{% url 'login' %}">Login</a>
                     </li>
-
                 </ul>
             </div>
         </div>
@@ -167,7 +188,7 @@
     <!-- Jumbotron -->
     <div class="jumbotron">
         <div class="container">
-            <h1>Welcome to Vulnerability Scanner</h1>
+            <h1>Welcome to SQL Vulnerability Scanner</h1>
             <p>Your trusted tool for detecting and mitigating web vulnerabilities.</p>
             <a href="{% url 'register' %}" class="btn btn-primary">Get Started</a>
         </div>
@@ -187,11 +208,18 @@
                 <p>Get detailed reports with actionable insights and mitigation strategies.</p>
             </div>
             <div class="col-md-4 feature-item">
-                <img src="https://cdn0.iconfinder.com/data/icons/seo-web-4-1/128/Vigor_Shield-Protect-Security-Defense-Secure-512.png"  height="100" width="100"    alt="Security Icon">
+                <img src="https://cdn0.iconfinder.com/data/icons/seo-web-4-1/128/Vigor_Shield-Protect-Security-Defense-Secure-512.png" height="100" width="100" alt="Security Icon">
                 <h3>Enhanced Security</h3>
                 <p>Protect your website from common vulnerabilities and ensure its safety.</p>
             </div>
         </div>
+    </div>
+
+    <!-- FAQ, Help, and Feedback Section Buttons -->
+    <div class="text-center my-5">
+        <a href="{% url 'faq' %}" class="btn btn-info btn-lg">📘 View Frequently Asked Questions</a>
+        <a href="{% url 'help' %}" class="btn btn-info btn-lg mx-3">🆘 Help</a>
+        <a href="{% url 'feedback' %}" class="btn btn-info btn-lg">💬 Provide Feedback</a>
     </div>
 
     <!-- Footer -->
@@ -199,7 +227,6 @@
         <div class="container">
             <p>&copy; 2024 Vulnerability Scanner. All rights reserved.</p>
             <p>Developed by Swift Forensics Company</p>
-
         </div>
     </footer>
 

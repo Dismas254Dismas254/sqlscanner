@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simulate M-Pesa Payment</title>
   <style>
     body {
@@ -31,13 +31,14 @@
       margin-bottom: 20px;
     }
 
-    .payment-container input[type="tel"] {
+    .payment-container input[type="text"] {
       width: 100%;
       padding: 12px;
       margin-bottom: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 16px;
+      text-transform: uppercase;
     }
 
     .payment-container button,
@@ -76,26 +77,25 @@
 <body>
   <div class="payment-container">
     <div class="mpesa-icon">📱</div>
-    <h2> M-Pesa Payment</h2>
-    
+    <h2>M-Pesa Payment</h2>
+
     {% if error %}
       <div class="error-message">{{ error }}</div>
     {% endif %}
 
     <form method="post" novalidate>
       {% csrf_token %}
-      <input 
-        type="tel" 
-        name="phone_number" 
-        inputmode="numeric" 
-        pattern="\d{10}" 
-        maxlength="10" 
-        placeholder="Enter 10-digit phone number" 
-        required 
-        value="{{ phone_number|default:'' }}"
-        title="Phone number must be exactly 10 digits."
-      />
-      <button type="submit">Make Payment</button>
+ <input 
+  type="text" 
+  name="mpesa_code" 
+  pattern="^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]{10}$" 
+  maxlength="10" 
+  placeholder="Enter 10-character M-Pesa Code" 
+  required 
+  value="{{ mpesa_code|default:'' }}"
+  title="Must be exactly 10 characters, uppercase letters and digits only, with at least one letter and one digit"
+/>
+      <button type="submit">Submit Code</button>
     </form>
 
     <a href="{% url 'dashboard' %}" class="back-button">← Back to Dashboard</a>

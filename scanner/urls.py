@@ -98,6 +98,14 @@ urlpatterns = [
    path('payment/', CardPaymentView.as_view(), name='payment'),
    path('mpesa/', MpesaPaymentView.as_view(), name='mpesa'),
    path('cash/', CashPaymentView.as_view(), name='cash'),
+    path('finance/', views.finance_dashboard, name='finance_dashboard'),
+    path('approve-payment/<int:profile_id>/', views.approve_payment, name='approve_payment'),
+    path('reject-payment/<int:profile_id>/', views.reject_payment, name='reject_payment'),
+    path('faq/', views.faq, name='faq'),
+    path('help/', views.help, name='help'),
+    path('feedback/', views.feedback, name='feedback'),
+    path('finance/reports/', views.finance_reports, name='finance_reports'),
+     path('finance/reports/download/', views.generate_report_pdf, name='download_finance_report'),
     
 ]
     

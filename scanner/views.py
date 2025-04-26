@@ -1,5 +1,5 @@
 import requests
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.http import HttpResponse
 from .models import ScanResult
 from bs4 import BeautifulSoup
@@ -11,6 +11,15 @@ from .models import UserPaxfulPay
 
 
 from django.views.decorators.csrf import csrf_exempt
+
+from .models import Profile
+from django.db.models import Q
+from .models import Feedback
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import base64
+
 
 
 #start of paypal imports
@@ -668,7 +677,16 @@ def otp_verification(request):
                     request.session['otp_verified'] = True
                     del request.session['otp']
                     del request.session['otp_timestamp']
-                    return redirect('dashboard')
+
+                    # 🛡️ Redirect based on user role
+                    user = User.objects.get(id=user_id)
+                    if user.is_superuser:
+                        return redirect('/admin/')  # Django Admin Panel
+                    elif user.groups.filter(name='Finance').exists():
+                        return redirect('/finance/')  # Finance Dashboard
+                    else:
+                        return redirect('/dashboard/')  # Normal User Dashboard
+
                 else:
                     attempt_key = f'otp_attempts_{user_id}'
                     attempts_left = 5 - cache.get(attempt_key, 0)
@@ -1453,26 +1471,26 @@ class CardPaymentView(View):
     
 
 
-
 @method_decorator(login_required, name='dispatch')
 class MpesaPaymentView(View):
     def get(self, request, *args, **kwargs):
         return render(request, 'mpesa.html')
 
     def post(self, request, *args, **kwargs):
-        phone_number = request.POST.get('phone_number')
+        mpesa_code = request.POST.get('mpesa_code')
 
-        # Validate: must be exactly 10 digits, only numbers
-        if not phone_number or not re.fullmatch(r'\d{10}', phone_number):
-            error = "❌ Invalid phone number. Please enter exactly 10 digits."
-            return render(request, 'mpesa.html', {'error': error, 'phone_number': phone_number})
+        # Validate: must be 10 characters, only uppercase letters and numbers
+        if not mpesa_code or not re.fullmatch(r'[A-Z0-9]{10}', mpesa_code):
+            error = "❌ Invalid M-Pesa code. Must be exactly 10 characters, uppercase letters and numbers only."
+            return render(request, 'mpesa.html', {'error': error, 'mpesa_code': mpesa_code})
 
         try:
             profile, created = Profile.objects.get_or_create(user=request.user)
-            profile.premium_status = True
+            profile.mpesa_code = mpesa_code
+            profile.mpesa_pending = True  # Wait for admin to approve
             profile.save()
 
-            messages.success(request, "📱 M-Pesa payment simulated successfully! You are now a premium user.")
+            messages.info(request, "⏳ M-Pesa code submitted. Please wait for admin approval.")
             return redirect('dashboard')
 
         except Exception as e:
@@ -1494,3 +1512,139 @@ class CashPaymentView(View):
 
         except Exception as e:
             return render(request, 'payment_failed.html', {'message': f"An error occurred: {str(e)}"})
+
+
+
+def is_finance(user):
+    return user.groups.filter(name='Finance').exists()
+
+@login_required
+@user_passes_test(is_finance)
+def finance_dashboard(request):
+    search_query = request.GET.get('search', '')
+    profiles = Profile.objects.filter(premium_status=False).filter(mpesa_pending=True) | Profile.objects.filter(cash_pending=True)
+    if search_query:
+        profiles = profiles.filter(user__username__icontains=search_query)
+    return render(request, 'finance_panel.html', {'profiles': profiles})
+
+@login_required
+@user_passes_test(is_finance)
+def approve_payment(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    if request.method == 'POST':
+        if profile.mpesa_pending:
+            profile.mpesa_pending = False
+            profile.payment_type = 'M-Pesa'
+        elif profile.cash_pending:
+            profile.cash_pending = False
+            profile.payment_type = 'Cash'
+        profile.premium_status = True
+        profile.save()
+    return redirect('finance_dashboard')
+
+@login_required
+@user_passes_test(is_finance)
+def reject_payment(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    if request.method == 'POST':
+        if profile.mpesa_pending or profile.cash_pending:
+            profile.mpesa_pending = False
+            profile.cash_pending = False
+            profile.payment_type = 'Rejected'
+        profile.save()
+    return redirect('finance_dashboard')
+
+@login_required
+@user_passes_test(is_finance)
+def finance_reports(request):
+    premium_profiles = Profile.objects.filter(premium_status=True)
+    cash_pending_profiles = Profile.objects.filter(cash_pending=True)
+    mpesa_pending_profiles = Profile.objects.filter(mpesa_pending=True)
+
+    context = {
+        'premium_profiles': premium_profiles,
+        'cash_pending_profiles': cash_pending_profiles,
+        'mpesa_pending_profiles': mpesa_pending_profiles,
+        'premium_users_count': premium_profiles.count(),
+        'cash_pending_count': cash_pending_profiles.count(),
+        'mpesa_pending_count': mpesa_pending_profiles.count(),
+    }
+    return render(request, 'finance_reports.html', context)
+
+def faq(request):
+    return render(request, 'faq.html')
+
+def help(request):
+    return render(request, 'help.html')
+
+# Feedback page view
+def feedback(request):
+    if request.method == 'POST':
+        feedback_text = request.POST.get('feedback')
+        Feedback.objects.create(text=feedback_text)
+        messages.success(request, "Thank you for your feedback!")  # Add this line
+        return redirect('index')  # Adjust to your actual homepage name
+
+    return render(request, 'feedback.html')
+
+
+
+@login_required
+@user_passes_test(is_finance)
+def generate_report_pdf(request):
+    # Fetch the data
+    premium_profiles = Profile.objects.filter(premium_status=True)
+    cash_pending_profiles = Profile.objects.filter(cash_pending=True)
+    mpesa_pending_profiles = Profile.objects.filter(mpesa_pending=True)
+
+    premium_users_count = premium_profiles.count()
+    cash_pending_count = cash_pending_profiles.count()
+    mpesa_pending_count = mpesa_pending_profiles.count()
+
+    # Generate Pie Chart
+    labels = ['Premium Users', 'Cash Pending', 'M-Pesa Pending']
+    sizes = [premium_users_count, cash_pending_count, mpesa_pending_count]
+    colors = ['#4CAF50', '#FFC107', '#2196F3']
+
+    fig, ax = plt.subplots(figsize=(6,6))
+    wedges, texts, autotexts = ax.pie(
+        sizes, labels=labels, autopct='%1.1f%%', startangle=90, colors=colors,
+        wedgeprops={'edgecolor': 'white'}, textprops={'fontsize': 10}
+    )
+    ax.axis('equal')  # Equal aspect ratio for circle
+
+    # Add center text
+    plt.text(0, 0, 'Finance\nReport', ha='center', va='center', fontsize=14, color='black')
+
+    # Save pie chart to BytesIO object
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png', bbox_inches="tight")
+    plt.close(fig)
+    buffer.seek(0)
+    image_png = buffer.getvalue()
+    buffer.close()
+
+    pie_chart_base64 = base64.b64encode(image_png).decode('utf-8')
+
+    # Current datetime
+    generated_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    context = {
+        'premium_users_count': premium_users_count,
+        'cash_pending_count': cash_pending_count,
+        'mpesa_pending_count': mpesa_pending_count,
+        'pie_chart': pie_chart_base64,
+        'generated_time': generated_time,
+    }
+
+    html_content = render_to_string('finance_report_pdf.html', context)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="finance_report.pdf"'
+
+    pisa_status = pisa.CreatePDF(html_content, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse('We had some errors while generating your PDF', status=500)
+
+    return response
