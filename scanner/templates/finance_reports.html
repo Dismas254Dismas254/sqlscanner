@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Finance Reports</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f1f3f4;
+            font-family: Arial, sans-serif;
+            padding-top: 70px;
+        }
+        .sidebar {
+            height: 100vh;
+            background-color: #343a40;
+            position: fixed;
+            padding-top: 20px;
+            width: 220px;
+        }
+        .sidebar a {
+            color: white;
+            padding: 10px 20px;
+            display: block;
+            text-decoration: none;
+            margin-bottom: 10px;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+            text-decoration: none;
+        }
+        .content {
+            margin-left: 240px;
+            padding: 20px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        table {
+            background: #ffffff;
+        }
+        .pie-chart-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h4 class="text-center text-white">Finance Panel</h4>
+    <a href="{% url 'finance_dashboard' %}">Dashboard</a>
+    <a href="{% url 'finance_reports' %}">Reports</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+<!-- Main Content -->
+<div class="content">
+    <div class="container-fluid">
+        <h1>Finance Reports</h1>
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card text-white bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title">Premium Users</h5>
+                        <p class="card-text">{{ premium_users_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title">Cash Pending</h5>
+                        <p class="card-text">{{ cash_pending_count }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title">M-Pesa Pending</h5>
+                        <p class="card-text">{{ mpesa_pending_count }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pie Chart Section -->
+        <div class="card p-3 mt-5">
+            <h5 class="mb-3">Summary Pie Chart</h5>
+            <div class="pie-chart-container">
+                <canvas id="financePieChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Tables Section -->
+        <div class="card mt-5">
+            <div class="card-body">
+                <h5 class="card-title">Premium Users</h5>
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in premium_profiles %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">No premium users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-5">
+            <div class="card-body">
+                <h5 class="card-title">Cash Pending Users</h5>
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in cash_pending_profiles %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center">No cash pending users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-5">
+            <div class="card-body">
+                <h5 class="card-title">M-Pesa Pending Users</h5>
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>M-Pesa Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in mpesa_pending_profiles %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                            <td>{{ profile.mpesa_code|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center">No M-Pesa pending users found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+<!-- Add the Download Button -->
+<div class="container mt-4">
+    <a href="{% url 'download_finance_report' %}" class="btn btn-primary">Download Report as PDF</a>
+</div>
+
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const ctx = document.getElementById('financePieChart').getContext('2d');
+const financePieChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+        labels: ['Premium Users', 'Cash Pending', 'M-Pesa Pending'],
+        datasets: [{
+            label: 'User Distribution',
+            data: [
+                {{ premium_users_count }},
+                {{ cash_pending_count }},
+                {{ mpesa_pending_count }}
+            ],
+            backgroundColor: [
+                'rgba(40, 167, 69, 0.7)',
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(23, 162, 184, 0.7)'
+            ],
+            borderColor: [
+                'rgba(40, 167, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(23, 162, 184, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(tooltipItem) {
+                        return tooltipItem.label + ': ' + tooltipItem.raw;
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Finance Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f1f4f9;
+        }
+        .sidebar {
+            height: 100vh;
+            background: #343a40;
+            padding-top: 20px;
+        }
+        .sidebar a {
+            color: #cfd8dc;
+            text-decoration: none;
+            display: block;
+            padding: 10px 20px;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #495057;
+            color: #ffffff;
+        }
+        .content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .navbar {
+            margin-left: 250px;
+        }
+        .table thead {
+            background-color: #343a40;
+            color: white;
+        }
+        .card {
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar position-fixed">
+    <h4 class="text-white text-center mb-4">Finance Panel</h4>
+    <a href="{% url 'finance_dashboard' %}" class="{% if request.resolver_match.url_name == 'finance_dashboard' %}active{% endif %}">Dashboard</a>
+    <a href="{% url 'finance_reports' %}" class="{% if request.resolver_match.url_name == 'finance_reports' %}active{% endif %}">Reports</a>
+    <a href="{% url 'logout' %}">Logout</a>
+</div>
+
+<!-- Top Navbar -->
+<nav class="navbar navbar-expand navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">Dashboard</span>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="content">
+    <div class="container-fluid">
+        <h2 class="mb-4">Pending Payments</h2>
+
+        <!-- Search Form -->
+        <form method="GET" class="row mb-4">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Search username..." value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </div>
+        </form>
+
+        <div class="card p-3">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Payment Type</th>
+                            <th>Status</th>
+                            <th>M-Pesa Code</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in profiles %}
+                            {% if profile.cash_pending or profile.mpesa_pending %}
+                                <tr>
+                                    <td>{{ profile.user.username }}</td>
+                                    <td>{{ profile.user.email }}</td>
+                                    <td>
+                                        {% if profile.cash_pending %}
+                                            Cash
+                                        {% elif profile.mpesa_pending %}
+                                            M-Pesa
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-warning text-dark">Pending</span></td>
+                                    <td>
+                                        {% if profile.mpesa_pending and profile.mpesa_code %}
+                                            {{ profile.mpesa_code }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="post" action="{% url 'approve_payment' profile.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                        </form>
+                                        <form method="post" action="{% url 'reject_payment' profile.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center">No pending payments found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
