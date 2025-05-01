@@ -1466,7 +1466,7 @@ class CardPaymentView(View):
             profile.save()
 
             # Show success message
-            messages.success(request, "✅ Payment simulated successfully! You are now a premium user.")
+            messages.success(request, "✅ Payment  successfull! You are now a premium user.")
             return redirect('dashboard')  # Redirect to the dashboard (or wherever you want the user to go)
 
         except Exception as e:
