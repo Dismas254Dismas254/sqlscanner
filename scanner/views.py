@@ -19,6 +19,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import base64
+from django.http import JsonResponse
+from django.utils.timesince import timesince
 
 
 
@@ -1579,15 +1581,31 @@ def faq(request):
 def help(request):
     return render(request, 'help.html')
 
-# Feedback page view
+@login_required
 def feedback(request):
     if request.method == 'POST':
         feedback_text = request.POST.get('feedback')
-        Feedback.objects.create(text=feedback_text)
-        messages.success(request, "Thank you for your feedback!")  # Add this line
-        return redirect('index')  # Adjust to your actual homepage name
+        if feedback_text:
+            Feedback.objects.create(user=request.user, text=feedback_text)
+        return redirect('feedback')
 
-    return render(request, 'feedback.html')
+    # AJAX polling request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        feedbacks = Feedback.objects.filter(user=request.user).order_by('created_at')
+        data = [
+            {
+                'text': f.text,
+                'reply': f.reply,
+                'time': f.created_at.strftime('%H:%M'),
+                'since': timesince(f.created_at),
+            }
+            for f in feedbacks
+        ]
+        return JsonResponse({'feedbacks': data})
+
+    # Regular page load
+    feedbacks = Feedback.objects.filter(user=request.user).order_by('created_at')
+    return render(request, 'feedback.html', {'feedbacks': feedbacks})
 
 
 

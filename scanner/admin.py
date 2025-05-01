@@ -50,12 +50,19 @@ class ProfileAdmin(admin.ModelAdmin):
         return False
 
 
+@admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
-    list_display = ('text_preview', 'created_at')
+    list_display = ('user', 'text', 'reply', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('text', 'reply', 'user__username')
+    readonly_fields = ('user', 'text', 'created_at')  # prevent editing original feedback
+    fields = ('user', 'text', 'reply', 'created_at')  # order of fields in form
 
-    def text_preview(self, obj):
-        return obj.text[:50] + "..." if len(obj.text) > 50 else obj.text
+    def has_add_permission(self, request):
+        return False  # disable adding feedback manually from admin
 
-    text_preview.short_description = 'Feedback'
+    def has_change_permission(self, request, obj=None):
+        return True  # allow changing (replying to) feedback
 
-admin.site.register(Feedback, FeedbackAdmin)
+    def has_delete_permission(self, request, obj=None):
+        return True  # optional: allow deleting feedback

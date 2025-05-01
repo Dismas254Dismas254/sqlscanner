@@ -31,15 +31,13 @@ class Profile(models.Model):
     
 
 class Feedback(models.Model):
-    # Field to store the user's feedback
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     text = models.TextField()
-
-    # Automatically set the timestamp when feedback is created
+    reply = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        # Return a short preview of the feedback (first 50 characters)
-        return self.text[:50]
+        return f"Feedback by {self.user.username}"
 
 
 
